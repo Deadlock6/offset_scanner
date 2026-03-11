@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг датчиков</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: #f5f5f7;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .dashboard {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 400;
+            color: #1d1d1f;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        .sensors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .sensor-card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02), 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .sensor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .sensor-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .sensor-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 14px;
+            font-size: 20px;
+        }
+
+        .sensor-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #2c2c2e;
+        }
+
+        .sensor-unit {
+            font-size: 0.9rem;
+            color: #8e8e93;
+            margin-left: 4px;
+            font-weight: 400;
+        }
+
+        .sensor-value-container {
+            margin-bottom: 18px;
+        }
+
+        .sensor-value {
+            font-size: 3.2rem;
+            font-weight: 300;
+            color: #000000;
+            line-height: 1.2;
+            display: inline-block;
+        }
+
+        .sensor-trend {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 1rem;
+            color: #8e8e93;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 16px 0 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .temp-fill {
+            background: linear-gradient(90deg, #5e5ce0, #00a6b4);
+        }
+
+        .ec-fill {
+            background: linear-gradient(90deg, #00b4a1, #34c759);
+        }
+
+        .level-fill {
+            background: linear-gradient(90deg, #30b0c0, #5e5ce0);
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #8e8e93;
+            margin-top: 6px;
+        }
+
+        .update-time {
+            text-align: center;
+            color: #8e8e93;
+            font-size: 0.9rem;
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: #5e5ce0;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: underline;
+            text-decoration-color: transparent;
+            transition: text-decoration-color 0.2s;
+        }
+
+        .refresh-btn:hover {
+            text-decoration-color: #5e5ce0;
+        }
+
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .sensor-card {
+                padding: 22px 18px;
+            }
+            
+            .sensor-value {
+                font-size: 2.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>Мониторинг показаний</h1>
+        
+        <div class="sensors-grid" id="sensorsGrid">
+            <!-- Температура -->
+            <div class="sensor-card">
+                <div class="sensor-header">
+                    <div class="sensor-icon">🌡️</div>
+                    <div class="sensor-title">
+                        Температура <span class="sensor-unit">°C</span>
+                    </div>
+                </div>
+                <div class="sensor-value-container">
+                    <span class="sensor-value" id="tempValue">--</span>
+                    <span class="sensor-trend" id="tempTrend"></span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill temp-fill" id="tempProgress" style="width: 0%;"></div>
+                </div>
+                <div class="range-labels">
+                    <span>-10°</span>
+                    <span>25°</span>
+                    <span>60°</span>
+                </div>
+            </div>
+
+            <!-- Электропроводность -->
+            <div class="sensor-card">
+                <div class="sensor-header">
+                    <div class="sensor-icon">⚡</div>
+                    <div class="sensor-title">
+                        Электропроводность <span class="sensor-unit">мкСм/см</span>
+                    </div>
+                </div>
+                <div class="sensor-value-container">
+                    <span class="sensor-value" id="ecValue">--</span>
+                    <span class="sensor-trend" id="ecTrend"></span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill ec-fill" id="ecProgress" style="width: 0%;"></div>
+                </div>
+                <div class="range-labels">
+                    <span>0</span>
+                    <span>750</span>
+                    <span>1500</span>
+                </div>
+            </div>
+
+            <!-- Уровень жидкости -->
+            <div class="sensor-card">
+                <div class="sensor-header">
+                    <div class="sensor-icon">💧</div>
+                    <div class="sensor-title">
+                        Уровень жидкости <span class="sensor-unit">%</span>
+                    </div>
+                </div>
+                <div class="sensor-value-container">
+                    <span class="sensor-value" id="levelValue">--</span>
+                    <span class="sensor-trend" id="levelTrend"></span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill level-fill" id="levelProgress" style="width: 0%;"></div>
+                </div>
+                <div class="range-labels">
+                    <span>0%</span>
+                    <span>50%</span>
+                    <span>100%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="update-time">
+            <span id="timestamp">Обновлено: --</span>
+            <button class="refresh-btn" id="refreshBtn">Обновить</button>
+        </div>
+    </div>
+
+    <script>
+        // Функция для генерации случайных значений в заданном диапазоне
+        function randomInRange(min, max) {
+            return Number((Math.random() * (max - min) + min).toFixed(1));
+        }
+
+        // Функция для определения тренда (изменения относительно предыдущего значения)
+        function getTrendIcon(current, previous) {
+            if (previous === null) return '';
+            const diff = current - previous;
+            if (Math.abs(diff) < 0.1) return '→';
+            return diff > 0 ? '↑' : '↓';
+        }
+
+        // Класс для управления историей значений датчиков
+        class SensorHistory {
+            constructor() {
+                this.lastValues = {
+                    temperature: null,
+                    conductivity: null,
+                    level: null
+                };
+            }
+
+            updateValue(sensor, newValue) {
+                const oldValue = this.lastValues[sensor];
+                this.lastValues[sensor] = newValue;
+                return oldValue;
+            }
+        }
+
+        // Инициализация истории
+        const history = new SensorHistory();
+
+        // Функция обновления всех показаний
+        function updateSensorData() {
+            // Генерируем новые значения
+            const temp = randomInRange(18, 32);
+            const ec = randomInRange(400, 900);
+            const level = randomInRange(30, 95);
+
+            // Получаем старые значения для тренда
+            const oldTemp = history.updateValue('temperature', temp);
+            const oldEc = history.updateValue('conductivity', ec);
+            const oldLevel = history.updateValue('level', level);
+
+            // Обновляем отображение температуры
+            document.getElementById('tempValue').textContent = temp;
+            document.getElementById('tempTrend').textContent = getTrendIcon(temp, oldTemp);
+            // Масштабируем прогресс: -10°C = 0%, 60°C = 100%
+            const tempProgress = Math.min(100, Math.max(0, ((temp + 10) / 70) * 100));
+            document.getElementById('tempProgress').style.width = tempProgress + '%';
+
+            // Обновляем отображение электропроводности
+            document.getElementById('ecValue').textContent = ec;
+            document.getElementById('ecTrend').textContent = getTrendIcon(ec, oldEc);
+            // Масштабируем прогресс: 0-1500 мкСм/см
+            const ecProgress = (ec / 1500) * 100;
+            document.getElementById('ecProgress').style.width = ecProgress + '%';
+
+            // Обновляем отображение уровня жидкости
+            document.getElementById('levelValue').textContent = level;
+            document.getElementById('levelTrend').textContent = getTrendIcon(level, oldLevel);
+            // Прогресс бар для уровня (0-100%)
+            document.getElementById('levelProgress').style.width = level + '%';
+
+            // Обновляем временную метку
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            document.getElementById('timestamp').textContent = `Обновлено: ${timeString}`;
+        }
+
+        // Функция для инициализации с начальными значениями
+        function initSensors() {
+            // Устанавливаем начальные значения
+            history.updateValue('temperature', 23.5);
+            history.updateValue('conductivity', 650);
+            history.updateValue('level', 75);
+
+            document.getElementById('tempValue').textContent = '23.5';
+            document.getElementById('tempProgress').style.width = ((23.5 + 10) / 70) * 100 + '%';
+            
+            document.getElementById('ecValue').textContent = '650';
+            document.getElementById('ecProgress').style.width = (650 / 1500) * 100 + '%';
+            
+            document.getElementById('levelValue').textContent = '75';
+            document.getElementById('levelProgress').style.width = '75%';
+
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            document.getElementById('timestamp').textContent = `Обновлено: ${timeString}`;
+        }
+
+        // Обработчик кнопки обновления
+        document.getElementById('refreshBtn').addEventListener('click', updateSensorData);
+
+        // Автоматическое обновление каждые 5 секунд
+        setInterval(updateSensorData, 5000);
+
+        // Инициализация при загрузке страницы
+        window.addEventListener('load', initSensors);
+    </script>
+</body>
+</html>
