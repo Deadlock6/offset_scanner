@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг датчиков</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: #f5f5f7;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .dashboard {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            border-radius: 32px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: #1d1d1f;
+            margin-bottom: 3rem;
+            text-align: center;
+            letter-spacing: -0.3px;
+        }
+
+        .sensors-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .sensor-column {
+            flex: 1;
+            min-width: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .sensor-header {
+            text-align: center;
+            margin-bottom: 24px;
+            width: 100%;
+        }
+
+        .sensor-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .sensor-title {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #8e8e93;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .sensor-unit {
+            font-size: 0.8rem;
+            color: #c6c6c8;
+            margin-left: 4px;
+        }
+
+        /* Вертикальный индикатор */
+        .meter-container {
+            position: relative;
+            width: 100%;
+            max-width: 120px;
+            margin: 0 auto 20px;
+        }
+
+        .meter-scale {
+            position: relative;
+            width: 60px;
+            height: 300px;
+            background: #f0f0f0;
+            border-radius: 40px;
+            margin: 0 auto;
+            overflow: hidden;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .meter-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            border-radius: 40px;
+            transition: height 0.3s ease;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+        }
+
+        .temp-fill {
+            background: linear-gradient(0deg, #5e5ce0, #00a6b4);
+        }
+
+        .ec-fill {
+            background: linear-gradient(0deg, #00b4a1, #34c759);
+        }
+
+        .level-fill {
+            background: linear-gradient(0deg, #30b0c0, #5e5ce0);
+        }
+
+        /* Отметки на линейке */
+        .markings-on-scale {
+            position: absolute;
+            top: 0;
+            right: -30px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #8e8e93;
+            padding: 4px 0;
+        }
+
+        .marking {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .marking-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: #8e8e93;
+        }
+
+        .marking-value {
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        /* Текущее значение */
+        .current-value {
+            font-size: 2.2rem;
+            font-weight: 300;
+            color: #1d1d1f;
+            line-height: 1;
+            margin: 16px 0 8px;
+            text-align: center;
+        }
+
+        .range-info {
+            font-size: 0.8rem;
+            color: #a1a1a6;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .update-time {
+            text-align: center;
+            color: #8e8e93;
+            font-size: 0.9rem;
+            margin-top: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: #f0f0f0;
+            color: #8e8e93;
+        }
+
+        .status-badge.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* Для отладки (можно убрать в продакшене) */
+        .debug-info {
+            font-size: 0.7rem;
+            color: #c6c6c8;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 30px 20px;
+            }
+
+            .meter-scale {
+                width: 50px;
+                height: 250px;
+            }
+
+            .markings-on-scale {
+                right: -25px;
+                font-size: 0.65rem;
+            }
+
+            .current-value {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sensors-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 40px;
+            }
+
+            .sensor-column {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>Показания датчиков</h1>
+        
+        <div class="sensors-container">
+            <!-- Температура -->
+            <div class="sensor-column">
+                <div class="sensor-header">
+                    <div class="sensor-icon">🌡️</div>
+                    <div class="sensor-title">
+                        ТЕМПЕРАТУРА<span class="sensor-unit">°C</span>
+                    </div>
+                </div>
+                
+                <div class="meter-container">
+                    <div class="meter-scale">
+                        <!-- Заполнение будет обновляться через JS -->
+                        <div class="meter-fill temp-fill" id="tempFill" style="height: 0%;"></div>
+                    </div>
+                    
+                    <!-- Отметки шкалы -->
+                    <div class="markings-on-scale">
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">60°</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">45°</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">30°</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">15°</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">0°</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">-10°</span></div>
+                    </div>
+                </div>
+                
+                <!-- Элементы для вставки данных -->
+                <div class="current-value">
+                    <span id="tempValue">--</span>
+                </div>
+                <div class="range-info">диапазон: -10° ... +60°</div>
+            </div>
+
+            <!-- Электропроводность -->
+            <div class="sensor-column">
+                <div class="sensor-header">
+                    <div class="sensor-icon">⚡</div>
+                    <div class="sensor-title">
+                        ПРОВОДИМОСТЬ<span class="sensor-unit">мкСм/см</span>
+                    </div>
+                </div>
+                
+                <div class="meter-container">
+                    <div class="meter-scale">
+                        <div class="meter-fill ec-fill" id="ecFill" style="height: 0%;"></div>
+                    </div>
+                    
+                    <div class="markings-on-scale">
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">1500</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">1200</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">900</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">600</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">300</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">0</span></div>
+                    </div>
+                </div>
+                
+                <div class="current-value">
+                    <span id="ecValue">--</span>
+                </div>
+                <div class="range-info">диапазон: 0 ... 1500 мкСм/см</div>
+            </div>
+
+            <!-- Уровень жидкости -->
+            <div class="sensor-column">
+                <div class="sensor-header">
+                    <div class="sensor-icon">💧</div>
+                    <div class="sensor-title">
+                        УРОВЕНЬ<span class="sensor-unit">%</span>
+                    </div>
+                </div>
+                
+                <div class="meter-container">
+                    <div class="meter-scale">
+                        <div class="meter-fill level-fill" id="levelFill" style="height: 0%;"></div>
+                    </div>
+                    
+                    <div class="markings-on-scale">
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">100%</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">80%</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">60%</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">40%</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">20%</span></div>
+                        <div class="marking"><span class="marking-dot"></span><span class="marking-value">0%</span></div>
+                    </div>
+                </div>
+                
+                <div class="current-value">
+                    <span id="levelValue">--</span><span style="font-size: 1.2rem;">%</span>
+                </div>
+                <div class="range-info">диапазон: 0% ... 100%</div>
+            </div>
+        </div>
+
+        <div class="update-time">
+            <span id="timestamp">Ожидание данных...</span>
+            <span class="status-badge" id="connectionStatus">Нет соединения</span>
+        </div>
+        
+        <!-- Скрытый элемент для передачи данных из Flask -->
+        <div id="sensor-data" 
+             data-temperature="--" 
+             data-conductivity="--" 
+             data-level="--" 
+             style="display: none;">
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Функция обновления интерфейса на основе полученных данных
+         * Эту функцию можно вызывать из Flask, передавая данные
+         */
+        function updateSensors(temperature, conductivity, level) {
+            // Обновляем числовые значения
+            if (temperature !== undefined && temperature !== null && temperature !== '--') {
+                document.getElementById('tempValue').textContent = temperature;
+                
+                // Масштабируем для прогресс-бара (-10°C = 0%, 60°C = 100%)
+                const tempNum = parseFloat(temperature);
+                if (!isNaN(tempNum)) {
+                    const tempPercent = Math.min(100, Math.max(0, ((tempNum + 10) / 70) * 100));
+                    document.getElementById('tempFill').style.height = tempPercent + '%';
+                }
+            }
+
+            if (conductivity !== undefined && conductivity !== null && conductivity !== '--') {
+                document.getElementById('ecValue').textContent = conductivity;
+                
+                const ecNum = parseFloat(conductivity);
+                if (!isNaN(ecNum)) {
+                    const ecPercent = (ecNum / 1500) * 100;
+                    document.getElementById('ecFill').style.height = Math.min(100, ecPercent) + '%';
+                }
+            }
+
+            if (level !== undefined && level !== null && level !== '--') {
+                document.getElementById('levelValue').textContent = level;
+                
+                const levelNum = parseFloat(level);
+                if (!isNaN(levelNum)) {
+                    document.getElementById('levelFill').style.height = Math.min(100, levelNum) + '%';
+                }
+            }
+
+            // Обновляем временную метку
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            document.getElementById('timestamp').textContent = `Последнее обновление: ${timeString}`;
+            
+            // Обновляем статус соединения
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.textContent = 'Активно';
+            statusEl.classList.add('active');
+        }
+
+        /**
+         * Функция для получения данных из скрытого элемента
+         * (альтернативный способ передачи данных из Flask)
+         */
+        function loadFromDataAttributes() {
+            const dataEl = document.getElementById('sensor-data');
+            if (dataEl) {
+                const temp = dataEl.dataset.temperature;
+                const ec = dataEl.dataset.conductivity;
+                const level = dataEl.dataset.level;
+                
+                if (temp !== '--' || ec !== '--' || level !== '--') {
+                    updateSensors(temp, ec, level);
+                }
+            }
+        }
+
+        /**
+         * Функция сброса показаний (при потере соединения)
+         */
+        function resetSensors() {
+            document.getElementById('tempValue').textContent = '--';
+            document.getElementById('ecValue').textContent = '--';
+            document.getElementById('levelValue').textContent = '--';
+            
+            document.getElementById('tempFill').style.height = '0%';
+            document.getElementById('ecFill').style.height = '0%';
+            document.getElementById('levelFill').style.height = '0%';
+            
+            document.getElementById('timestamp').textContent = 'Ожидание данных...';
+            
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.textContent = 'Нет соединения';
+            statusEl.classList.remove('active');
+        }
+
+        // Загружаем данные при загрузке страницы (если они уже есть в data-атрибутах)
+        window.addEventListener('load', function() {
+            loadFromDataAttributes();
+            
+            // Если данные не загрузились через атрибуты, показываем ожидание
+            setTimeout(() => {
+                if (document.getElementById('tempValue').textContent === '--') {
+                    // Данных нет, оставляем как есть
+                }
+            }, 1000);
+        });
+
+        // Экспортируем функции в глобальную область для доступа из Flask
+        window.sensorsAPI = {
+            update: updateSensors,
+            reset: resetSensors
+        };
+    </script>
+</body>
+</html>
