@@ -3,6 +3,8 @@
 #include <DallasTemperature.h>
 #include <GravityTDS.h>
 #include <NewPing.h>
+#include <LiquidCrystal_I2C.h>
+
 
 // Consants
 const unsigned char ONE_WIRE_BUS = 4;
