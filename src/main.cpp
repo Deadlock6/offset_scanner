@@ -13,7 +13,7 @@ const unsigned char ECHO_PIN = 18;
 const uint16_t MAX_DISTANCE = 400;
 const DeviceAddress temperature_sensor = {0x28, 0x73, 0xF6, 0x45, 0xD4, 0xC7, 0x6B, 0x9C};
 
-const unsigned char TDS_PIN = 15; 
+const unsigned char TDS_PIN = 34; 
 
 // variables
 unsigned long previousTime = millis();
@@ -44,22 +44,26 @@ void loop() {
 
 // температура
 
-    Serial.print("Requesting Temperatures...");
+    
     sensors.requestTemperatures();
-    Serial.print("done :)\n");
+    
     current_temp = sensors.getTempC(temperature_sensor);
-    Serial.println(current_temp);
+    Serial.print(current_temp);
+    Serial.println(" C");
 
 // электропроводность
 
     tds.setTemperature(current_temp);
+    tds.update();
     ec = tds.getTdsValue() / 0.5;
     Serial.print("EC: ");
-    Serial.print(ec);
+    Serial.print(ec, 0);
+    Serial.print("\n");
 
 // расстояние
 
     distance = sonar.ping_cm();
+    Serial.print("Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
     
