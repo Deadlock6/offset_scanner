@@ -5,11 +5,11 @@
 #include <NewPing.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
+#include <WiFi.h>
+#include <Keys.h>
 
 #define I2C_SDA 21
 #define I2C_SCL 22
-
-
 
 // Consants
 const unsigned char ONE_WIRE_BUS = 4;
@@ -18,6 +18,8 @@ const unsigned char ECHO_PIN = 18;
 const uint16_t MAX_DISTANCE = 400;
 const DeviceAddress temperature_sensor = {0x28, 0x73, 0xF6, 0x45, 0xD4, 0xC7, 0x6B, 0x9C};
 const unsigned char TDS_PIN = 15; 
+const char* SSID = ssid;
+const char* PASSWORD = password;
 
 // variables
 unsigned long previousTime = millis();
