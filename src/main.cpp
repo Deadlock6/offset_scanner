@@ -6,10 +6,17 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 #include <WiFi.h>
-#include <Keys.h>
 
+
+// i2c pins, threre is lcd
 #define I2C_SDA 21
 #define I2C_SCL 22
+
+
+// data for Blynk
+#define BLYNK_TEMPLATE_ID ""
+#define BLYNK_TEMPLATE_NAME ""
+#define BLYNK_AUTH_TOKEN ""
 
 // Consants
 const unsigned char ONE_WIRE_BUS = 4;
@@ -56,12 +63,9 @@ void setup() {
 }  
 
 void loop() {
-  if (millis() - previousTime >= 5000){
+  if (millis() - previousTime >= 1000){
     previousTime = millis();
-
-// температура
-
-    
+// температура 
     sensors.requestTemperatures();
     current_temp = sensors.getTempC(temperature_sensor);
     Serial.print("T: ");
@@ -69,7 +73,6 @@ void loop() {
 
 // электропроводность
     lcd.clear();    
-
     tds.setTemperature(current_temp); 
     tds.update();
     Serial.print(" Tds: ");
@@ -83,7 +86,7 @@ void loop() {
     distance = sonar.ping_cm();
     Serial.print(distance);
     Serial.println(" cm");
-    
+// обновление значений на дисплее   
     lcd.setCursor(0, 0);
     lcd.print("EC:");
     lcd.setCursor(3, 0);
